@@ -97,3 +97,106 @@
     border: 0;
 }
 
+.leaflet-sbs-range-horizontal {
+    -webkit-appearance: none;
+    display: inline-block!important;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0);
+    min-width: 100px;
+    cursor: pointer;
+    pointer-events: none;
+    -webkit-transform:rotate(90deg);
+    -moz-transform:rotate(90deg);
+    -o-transform:rotate(90deg);
+    -ms-transform:rotate(90deg);
+    transform:rotate(90deg);
+}
+.leaflet-sbs-range-horizontal::-ms-fill-upper {
+    background: transparent;
+}
+.leaflet-sbs-range-horizontal::-ms-fill-lower {
+    background: rgba(255, 255, 255, 0);
+}
+/* Browser thingies */
+
+.leaflet-sbs-range-horizontal::-moz-range-track {
+    opacity: 0;
+}
+.leaflet-sbs-range-horizontal::-ms-track {
+    opacity: 0;
+}
+.leaflet-sbs-range-horizontal::-ms-tooltip {
+    display: none;
+}
+/* For whatever reason, these need to be defined
+ * on their own so dont group them */
+
+.leaflet-sbs-range-horizontal::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    height: 40px;
+    width: 40px;
+    border-radius: 20px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    border: 1px solid #ddd;
+    background-image: url(range-icon.png);
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-size: 40px 40px;
+}
+.leaflet-sbs-range-horizontal::-ms-thumb {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    height: 40px;
+    width: 40px;
+    border-radius: 20px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    border: 1px solid #ddd;
+    background-image: url(range-icon.png);
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-size: 40px 40px;
+}
+.leaflet-sbs-range-horizontal::-moz-range-thumb {
+    padding: 0;
+    right: 0    ;
+    background: #fff;
+    height: 40px;
+    width: 40px;
+    border-radius: 20px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    border: 1px solid #ddd;
+    background-image: url(range-icon.png);
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-size: 40px 40px;
+}
+.leaflet-sbs-range-horizontal:disabled::-moz-range-thumb {
+    cursor: default;
+}
+.leaflet-sbs-range-horizontal:disabled::-ms-thumb {
+    cursor: default;
+}
+.leaflet-sbs-range-horizontal:disabled::-webkit-slider-thumb {
+    cursor: default;
+}
+.leaflet-sbs-range-horizontal:disabled {
+    cursor: default;
+}
+.leaflet-sbs-range-horizontal:focus {
+    outline: none!important;
+}
+.leaflet-sbs-range-horizontal::-moz-focus-outer {
+    border: 0;
+}
+
+

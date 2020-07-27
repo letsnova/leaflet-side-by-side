@@ -52,7 +52,13 @@ function noop () {}
 L.Control.SideBySide = L.Control.extend({
   options: {
     thumbSize: 42,
-    padding: 0
+    padding: 0,
+    vertical: true
+  },
+
+  _setOrientation: function (vertical) {
+    this.options.vertical = vertical
+    this.addTo(this._map)
   },
 
   initialize: function (leftLayers, rightLayers, options) {
@@ -64,7 +70,11 @@ L.Control.SideBySide = L.Control.extend({
   getPosition: function () {
     var rangeValue = this._range.value
     var offset = (0.5 - rangeValue) * (2 * this.options.padding + this.options.thumbSize)
-    return this._map.getSize().x * rangeValue + offset
+    if (this.options.vertical) {
+      return this._map.getSize().x * rangeValue + offset
+    } else {
+      return this._map.getSize().y * rangeValue + offset
+    }
   },
 
   setPosition: noop,
@@ -76,15 +86,25 @@ L.Control.SideBySide = L.Control.extend({
     this._map = map
 
     var container = this._container = L.DomUtil.create('div', 'leaflet-sbs', map._controlContainer)
-
-    this._divider = L.DomUtil.create('div', 'leaflet-sbs-divider', container)
-    var range = this._range = L.DomUtil.create('input', 'leaflet-sbs-range', container)
+    var range
+    if (this.options.vertical) {
+      this._divider = L.DomUtil.create('div', 'leaflet-sbs-divider', container)
+      range = this._range = L.DomUtil.create('input', 'leaflet-sbs-range', container)
+      range.style.paddingLeft = range.style.paddingRight = this.options.padding + 'px'
+      range.style.minHeight = 0
+      range.style.minWidth = '100%'
+    } else {
+      this._divider = L.DomUtil.create('div', 'leaflet-sbs-divider-horizontal', container)
+      range = this._range = L.DomUtil.create('input', 'leaflet-sbs-range-horizontal', container)
+      range.style.paddingTop = range.style.paddingBottom = this.options.padding + 'px'
+      // range.style.minHeight = '100vw'
+      range.style.minWidth = '100vh'
+    }
     range.type = 'range'
     range.min = 0
     range.max = 1
     range.step = 'any'
     range.value = 0.5
-    range.style.paddingLeft = range.style.paddingRight = this.options.padding + 'px'
     this._addEvents()
     this._updateLayers()
     return this
@@ -124,18 +144,34 @@ L.Control.SideBySide = L.Control.extend({
     var map = this._map
     var nw = map.containerPointToLayerPoint([0, 0])
     var se = map.containerPointToLayerPoint(map.getSize())
-    var clipX = nw.x + this.getPosition()
-    var dividerX = this.getPosition()
+    if (this.options.vertical) {
+      var clipX = nw.x + this.getPosition()
+      var dividerX = this.getPosition()
 
-    this._divider.style.left = dividerX + 'px'
-    this.fire('dividermove', {x: dividerX})
-    var clipLeft = 'rect(' + [nw.y, clipX, se.y, nw.x].join('px,') + 'px)'
-    var clipRight = 'rect(' + [nw.y, se.x, se.y, clipX].join('px,') + 'px)'
-    if (this._leftLayer) {
-      this._leftLayer.getContainer().style.clip = clipLeft
-    }
-    if (this._rightLayer) {
-      this._rightLayer.getContainer().style.clip = clipRight
+      this._divider.style.left = dividerX + 'px'
+      this.fire('dividermove', {x: dividerX})
+      var clipLeft = 'rect(' + [nw.y, clipX, se.y, nw.x].join('px,') + 'px)'
+      var clipRight = 'rect(' + [nw.y, se.x, se.y, clipX].join('px,') + 'px)'
+      if (this._leftLayer) {
+        this._leftLayer.getContainer().style.clip = clipLeft
+      }
+      if (this._rightLayer) {
+        this._rightLayer.getContainer().style.clip = clipRight
+      }
+    } else {
+      var clipY = nw.y + this.getPosition()
+      var dividerY = this.getPosition()
+
+      this._divider.style.top = dividerY + 'px'
+      this.fire('dividermove', {y: dividerY})
+      var clipTop = 'rect(' + [nw.y, se.x, clipY, nw.x].join('px,') + 'px)'
+      var clipBottom = 'rect(' + [clipY, se.x, se.y, nw.x].join('px,') + 'px)'
+      if (this._leftLayer) {
+        this._leftLayer.getContainer().style.clip = clipTop
+      }
+      if (this._rightLayer) {
+        this._rightLayer.getContainer().style.clip = clipBottom
+      }
     }
   },
 
@@ -202,8 +238,8 @@ module.exports = L.Control.SideBySide
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./layout.css":2,"./range.css":4}],2:[function(require,module,exports){
 var inject = require('./node_modules/cssify');
-var css = ".leaflet-sbs-range {\r\n    position: absolute;\r\n    top: 50%;\r\n    width: 100%;\r\n    z-index: 999;\r\n}\r\n.leaflet-sbs-divider {\r\n    position: absolute;\r\n    top: 0;\r\n    bottom: 0;\r\n    left: 50%;\r\n    margin-left: -2px;\r\n    width: 4px;\r\n    background-color: #fff;\r\n    pointer-events: none;\r\n    z-index: 999;\r\n}\r\n";
-inject(css, undefined, '_i6aomd');
+var css = ".leaflet-sbs-range {\n    position: absolute;\n    top: 50%;\n    width: 100%;\n    z-index: 999;\n}\n.leaflet-sbs-range-horizontal {\n    position: absolute;\n    top: 50%;\n    /* fix for strange positioning */\n    left: calc(50% - 50vh);\n    right: 50%;\n    bottom:0;\n    z-index: 999;\n}\n.leaflet-sbs-divider {\n    position: absolute;\n    top: 0;\n    bottom: 0;\n    left: 50%;\n    margin-left: -2px;\n    width: 4px;\n    background-color: #fff;\n    pointer-events: none;\n    z-index: 999;\n}\n.leaflet-sbs-divider-horizontal {\n    position: absolute;\n    top: 50%;\n    left: 0;\n    right: 0;\n    margin-top: -2px;\n    height: 4px;\n    background-color: #fff;\n    pointer-events: none;\n    z-index: 999;\n}\n";
+inject(css, undefined, '_87oguh');
 module.exports = css;
 
 },{"./node_modules/cssify":3}],3:[function(require,module,exports){
@@ -263,8 +299,8 @@ module.exports.byUrl = function (url) {
 
 },{}],4:[function(require,module,exports){
 var inject = require('./node_modules/cssify');
-var css = ".leaflet-sbs-range {\r\n    -webkit-appearance: none;\r\n    display: inline-block!important;\r\n    vertical-align: middle;\r\n    height: 0;\r\n    padding: 0;\r\n    margin: 0;\r\n    border: 0;\r\n    background: rgba(0, 0, 0, 0.25);\r\n    min-width: 100px;\r\n    cursor: pointer;\r\n    pointer-events: none;\r\n    z-index: 999;\r\n}\r\n.leaflet-sbs-range::-ms-fill-upper {\r\n    background: transparent;\r\n}\r\n.leaflet-sbs-range::-ms-fill-lower {\r\n    background: rgba(255, 255, 255, 0.25);\r\n}\r\n/* Browser thingies */\r\n\r\n.leaflet-sbs-range::-moz-range-track {\r\n    opacity: 0;\r\n}\r\n.leaflet-sbs-range::-ms-track {\r\n    opacity: 0;\r\n}\r\n.leaflet-sbs-range::-ms-tooltip {\r\n    display: none;\r\n}\r\n/* For whatever reason, these need to be defined\r\n * on their own so dont group them */\r\n\r\n.leaflet-sbs-range::-webkit-slider-thumb {\r\n    -webkit-appearance: none;\r\n    margin: 0;\r\n    padding: 0;\r\n    background: #fff;\r\n    height: 40px;\r\n    width: 40px;\r\n    border-radius: 20px;\r\n    cursor: ew-resize;\r\n    pointer-events: auto;\r\n    border: 1px solid #ddd;\r\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\r\n    background-position: 50% 50%;\r\n    background-repeat: no-repeat;\r\n    background-size: 40px 40px;\r\n}\r\n.leaflet-sbs-range::-ms-thumb {\r\n    margin: 0;\r\n    padding: 0;\r\n    background: #fff;\r\n    height: 40px;\r\n    width: 40px;\r\n    border-radius: 20px;\r\n    cursor: ew-resize;\r\n    pointer-events: auto;\r\n    border: 1px solid #ddd;\r\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\r\n    background-position: 50% 50%;\r\n    background-repeat: no-repeat;\r\n    background-size: 40px 40px;\r\n}\r\n.leaflet-sbs-range::-moz-range-thumb {\r\n    padding: 0;\r\n    right: 0    ;\r\n    background: #fff;\r\n    height: 40px;\r\n    width: 40px;\r\n    border-radius: 20px;\r\n    cursor: ew-resize;\r\n    pointer-events: auto;\r\n    border: 1px solid #ddd;\r\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\r\n    background-position: 50% 50%;\r\n    background-repeat: no-repeat;\r\n    background-size: 40px 40px;\r\n}\r\n.leaflet-sbs-range:disabled::-moz-range-thumb {\r\n    cursor: default;\r\n}\r\n.leaflet-sbs-range:disabled::-ms-thumb {\r\n    cursor: default;\r\n}\r\n.leaflet-sbs-range:disabled::-webkit-slider-thumb {\r\n    cursor: default;\r\n}\r\n.leaflet-sbs-range:disabled {\r\n    cursor: default;\r\n}\r\n.leaflet-sbs-range:focus {\r\n    outline: none!important;\r\n}\r\n.leaflet-sbs-range::-moz-focus-outer {\r\n    border: 0;\r\n}\r\n\r\n";
-inject(css, undefined, '_1tlt668');
+var css = ".leaflet-sbs-range {\n    -webkit-appearance: none;\n    display: inline-block!important;\n    vertical-align: middle;\n    height: 0;\n    padding: 0;\n    margin: 0;\n    border: 0;\n    background: rgba(0, 0, 0, 0.25);\n    min-width: 100px;\n    cursor: pointer;\n    pointer-events: none;\n    z-index: 999;\n}\n.leaflet-sbs-range::-ms-fill-upper {\n    background: transparent;\n}\n.leaflet-sbs-range::-ms-fill-lower {\n    background: rgba(255, 255, 255, 0.25);\n}\n/* Browser thingies */\n\n.leaflet-sbs-range::-moz-range-track {\n    opacity: 0;\n}\n.leaflet-sbs-range::-ms-track {\n    opacity: 0;\n}\n.leaflet-sbs-range::-ms-tooltip {\n    display: none;\n}\n/* For whatever reason, these need to be defined\n * on their own so dont group them */\n\n.leaflet-sbs-range::-webkit-slider-thumb {\n    -webkit-appearance: none;\n    margin: 0;\n    padding: 0;\n    background: #fff;\n    height: 40px;\n    width: 40px;\n    border-radius: 20px;\n    cursor: ew-resize;\n    pointer-events: auto;\n    border: 1px solid #ddd;\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\n    background-position: 50% 50%;\n    background-repeat: no-repeat;\n    background-size: 40px 40px;\n}\n.leaflet-sbs-range::-ms-thumb {\n    margin: 0;\n    padding: 0;\n    background: #fff;\n    height: 40px;\n    width: 40px;\n    border-radius: 20px;\n    cursor: ew-resize;\n    pointer-events: auto;\n    border: 1px solid #ddd;\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\n    background-position: 50% 50%;\n    background-repeat: no-repeat;\n    background-size: 40px 40px;\n}\n.leaflet-sbs-range::-moz-range-thumb {\n    padding: 0;\n    right: 0    ;\n    background: #fff;\n    height: 40px;\n    width: 40px;\n    border-radius: 20px;\n    cursor: ew-resize;\n    pointer-events: auto;\n    border: 1px solid #ddd;\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\n    background-position: 50% 50%;\n    background-repeat: no-repeat;\n    background-size: 40px 40px;\n}\n.leaflet-sbs-range:disabled::-moz-range-thumb {\n    cursor: default;\n}\n.leaflet-sbs-range:disabled::-ms-thumb {\n    cursor: default;\n}\n.leaflet-sbs-range:disabled::-webkit-slider-thumb {\n    cursor: default;\n}\n.leaflet-sbs-range:disabled {\n    cursor: default;\n}\n.leaflet-sbs-range:focus {\n    outline: none!important;\n}\n.leaflet-sbs-range::-moz-focus-outer {\n    border: 0;\n}\n\n.leaflet-sbs-range-horizontal {\n    -webkit-appearance: none;\n    display: inline-block!important;\n    height: 0;\n    padding: 0;\n    margin: 0;\n    border: 0;\n    background: rgba(0, 0, 0, 0);\n    min-width: 100px;\n    cursor: pointer;\n    pointer-events: none;\n    -webkit-transform:rotate(90deg);\n    -moz-transform:rotate(90deg);\n    -o-transform:rotate(90deg);\n    -ms-transform:rotate(90deg);\n    transform:rotate(90deg);\n}\n.leaflet-sbs-range-horizontal::-ms-fill-upper {\n    background: transparent;\n}\n.leaflet-sbs-range-horizontal::-ms-fill-lower {\n    background: rgba(255, 255, 255, 0);\n}\n/* Browser thingies */\n\n.leaflet-sbs-range-horizontal::-moz-range-track {\n    opacity: 0;\n}\n.leaflet-sbs-range-horizontal::-ms-track {\n    opacity: 0;\n}\n.leaflet-sbs-range-horizontal::-ms-tooltip {\n    display: none;\n}\n/* For whatever reason, these need to be defined\n * on their own so dont group them */\n\n.leaflet-sbs-range-horizontal::-webkit-slider-thumb {\n    -webkit-appearance: none;\n    margin: 0;\n    padding: 0;\n    background: #fff;\n    height: 40px;\n    width: 40px;\n    border-radius: 20px;\n    cursor: ew-resize;\n    pointer-events: auto;\n    border: 1px solid #ddd;\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\n    background-position: 50% 50%;\n    background-repeat: no-repeat;\n    background-size: 40px 40px;\n}\n.leaflet-sbs-range-horizontal::-ms-thumb {\n    margin: 0;\n    padding: 0;\n    background: #fff;\n    height: 40px;\n    width: 40px;\n    border-radius: 20px;\n    cursor: ew-resize;\n    pointer-events: auto;\n    border: 1px solid #ddd;\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\n    background-position: 50% 50%;\n    background-repeat: no-repeat;\n    background-size: 40px 40px;\n}\n.leaflet-sbs-range-horizontal::-moz-range-thumb {\n    padding: 0;\n    right: 0    ;\n    background: #fff;\n    height: 40px;\n    width: 40px;\n    border-radius: 20px;\n    cursor: ew-resize;\n    pointer-events: auto;\n    border: 1px solid #ddd;\n    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAMAAAC5zwKfAAAABlBMVEV9fX3///+Kct39AAAAAnRSTlP/AOW3MEoAAAA9SURBVFjD7dehDQAwDANBZ/+l2wmKoiqR7pHRcaeaCxAIBAL/g7k9JxAIBAKBQCAQCAQC14H+MhAIBE4CD3fOFvGVBzhZAAAAAElFTkSuQmCC\");\n    background-position: 50% 50%;\n    background-repeat: no-repeat;\n    background-size: 40px 40px;\n}\n.leaflet-sbs-range-horizontal:disabled::-moz-range-thumb {\n    cursor: default;\n}\n.leaflet-sbs-range-horizontal:disabled::-ms-thumb {\n    cursor: default;\n}\n.leaflet-sbs-range-horizontal:disabled::-webkit-slider-thumb {\n    cursor: default;\n}\n.leaflet-sbs-range-horizontal:disabled {\n    cursor: default;\n}\n.leaflet-sbs-range-horizontal:focus {\n    outline: none!important;\n}\n.leaflet-sbs-range-horizontal::-moz-focus-outer {\n    border: 0;\n}\n\n\n";
+inject(css, undefined, '_1fr81xo');
 module.exports = css;
 
 },{"./node_modules/cssify":3}]},{},[1]);

@@ -50,7 +50,13 @@ function noop () {}
 L.Control.SideBySide = L.Control.extend({
   options: {
     thumbSize: 42,
-    padding: 0
+    padding: 0,
+    vertical: true
+  },
+
+  _setOrientation: function (vertical) {
+    this.options.vertical = vertical
+    this.addTo(this._map)
   },
 
   initialize: function (leftLayers, rightLayers, options) {
@@ -62,7 +68,11 @@ L.Control.SideBySide = L.Control.extend({
   getPosition: function () {
     var rangeValue = this._range.value
     var offset = (0.5 - rangeValue) * (2 * this.options.padding + this.options.thumbSize)
-    return this._map.getSize().x * rangeValue + offset
+    if (this.options.vertical) {
+      return this._map.getSize().x * rangeValue + offset
+    } else {
+      return this._map.getSize().y * rangeValue + offset
+    }
   },
 
   setPosition: noop,
@@ -74,15 +84,25 @@ L.Control.SideBySide = L.Control.extend({
     this._map = map
 
     var container = this._container = L.DomUtil.create('div', 'leaflet-sbs', map._controlContainer)
-
-    this._divider = L.DomUtil.create('div', 'leaflet-sbs-divider', container)
-    var range = this._range = L.DomUtil.create('input', 'leaflet-sbs-range', container)
+    var range
+    if (this.options.vertical) {
+      this._divider = L.DomUtil.create('div', 'leaflet-sbs-divider', container)
+      range = this._range = L.DomUtil.create('input', 'leaflet-sbs-range', container)
+      range.style.paddingLeft = range.style.paddingRight = this.options.padding + 'px'
+      range.style.minHeight = 0
+      range.style.minWidth = '100%'
+    } else {
+      this._divider = L.DomUtil.create('div', 'leaflet-sbs-divider-horizontal', container)
+      range = this._range = L.DomUtil.create('input', 'leaflet-sbs-range-horizontal', container)
+      range.style.paddingTop = range.style.paddingBottom = this.options.padding + 'px'
+      // range.style.minHeight = '100vw'
+      range.style.minWidth = '100vh'
+    }
     range.type = 'range'
     range.min = 0
     range.max = 1
     range.step = 'any'
     range.value = 0.5
-    range.style.paddingLeft = range.style.paddingRight = this.options.padding + 'px'
     this._addEvents()
     this._updateLayers()
     return this
@@ -122,18 +142,34 @@ L.Control.SideBySide = L.Control.extend({
     var map = this._map
     var nw = map.containerPointToLayerPoint([0, 0])
     var se = map.containerPointToLayerPoint(map.getSize())
-    var clipX = nw.x + this.getPosition()
-    var dividerX = this.getPosition()
+    if (this.options.vertical) {
+      var clipX = nw.x + this.getPosition()
+      var dividerX = this.getPosition()
 
-    this._divider.style.left = dividerX + 'px'
-    this.fire('dividermove', {x: dividerX})
-    var clipLeft = 'rect(' + [nw.y, clipX, se.y, nw.x].join('px,') + 'px)'
-    var clipRight = 'rect(' + [nw.y, se.x, se.y, clipX].join('px,') + 'px)'
-    if (this._leftLayer) {
-      this._leftLayer.getContainer().style.clip = clipLeft
-    }
-    if (this._rightLayer) {
-      this._rightLayer.getContainer().style.clip = clipRight
+      this._divider.style.left = dividerX + 'px'
+      this.fire('dividermove', {x: dividerX})
+      var clipLeft = 'rect(' + [nw.y, clipX, se.y, nw.x].join('px,') + 'px)'
+      var clipRight = 'rect(' + [nw.y, se.x, se.y, clipX].join('px,') + 'px)'
+      if (this._leftLayer) {
+        this._leftLayer.getContainer().style.clip = clipLeft
+      }
+      if (this._rightLayer) {
+        this._rightLayer.getContainer().style.clip = clipRight
+      }
+    } else {
+      var clipY = nw.y + this.getPosition()
+      var dividerY = this.getPosition()
+
+      this._divider.style.top = dividerY + 'px'
+      this.fire('dividermove', {y: dividerY})
+      var clipTop = 'rect(' + [nw.y, se.x, clipY, nw.x].join('px,') + 'px)'
+      var clipBottom = 'rect(' + [clipY, se.x, se.y, nw.x].join('px,') + 'px)'
+      if (this._leftLayer) {
+        this._leftLayer.getContainer().style.clip = clipTop
+      }
+      if (this._rightLayer) {
+        this._rightLayer.getContainer().style.clip = clipBottom
+      }
     }
   },
 

@@ -4,6 +4,15 @@
     width: 100%;
     z-index: 999;
 }
+.leaflet-sbs-range-horizontal {
+    position: absolute;
+    top: 50%;
+    /* fix for strange positioning */
+    left: calc(50% - 50vh);
+    right: 50%;
+    bottom:0;
+    z-index: 999;
+}
 .leaflet-sbs-divider {
     position: absolute;
     top: 0;
@@ -11,6 +20,17 @@
     left: 50%;
     margin-left: -2px;
     width: 4px;
+    background-color: #fff;
+    pointer-events: none;
+    z-index: 999;
+}
+.leaflet-sbs-divider-horizontal {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    margin-top: -2px;
+    height: 4px;
     background-color: #fff;
     pointer-events: none;
     z-index: 999;
